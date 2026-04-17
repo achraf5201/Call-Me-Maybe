@@ -124,17 +124,3 @@ class Small_LLM_Model:
             filename=tokenizer_file_name
         )
         return tokenizer_path
-
-if __name__ == "__main__":
-    model = Small_LLM_Model()
-
-    text = "The capital of France is"
-    input_ids = model.encode(text)
-
-    logits = model.get_logits_from_input_ids(input_ids[0].tolist())
-
-    next_token_id = int(torch.argmax(torch.tensor(logits)))
-
-    next_word = model.decode([next_token_id])
-
-    print("Next word prediction:", next_word)

@@ -4,6 +4,8 @@ from typing import List
 from llm_sdk import Small_LLM_Model
 from src.models import FunctionDef, Prompt, FunctionCall
 from src.parser import parse_args
+from src.decoder import decoder
+import numpy as np
 
 
 def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
@@ -20,12 +22,6 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
         text += f"- {func.name}({params}) -> {func.returns.type}\n"
         text += f"  Description: {func.description}\n\n"
 
-    text += "User request:\n"
-    text += f"{user_prompt.prompt}\n\n"
-
-    text += "Return ONLY a valid JSON object.\n"
-    text += "Do not add explanations or markdown.\n\n"
-
     text += "Output format:\n"
     text += "{\n"
     text += '  "function": "function_name",\n'
@@ -33,6 +29,7 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
     text += '    "param1": value\n'
     text += "  }\n"
     text += "}\n"
+    text += f"prompt: {user_prompt}\n"
 
     return text
 
@@ -62,12 +59,14 @@ def main():
     except Exception as e:
         print("Validation error:", e)
         sys.exit(1)
-
-    print("PROMPTS:")
-    print(prompts)
-
-    print("\nFUNCTIONS:")
-    print(definitions)
+    texts: List[str] = []
+    for prompt in prompts:
+        texts.append(build_prompt(prompt, definitions))
+    i = 0
+    for text in texts:
+        print(prompts[i])
+        print(decoder(text))
+        i += 1
 
 
 if __name__ == "__main__":

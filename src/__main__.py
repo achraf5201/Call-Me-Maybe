@@ -63,6 +63,7 @@ def main():
     v = ConstrainedDecoder()
     for text in texts:
         print(v.decoder(text))
+        print("done")
         i += 1
 
 

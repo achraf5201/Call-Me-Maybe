@@ -17,6 +17,10 @@ class ConstrainedDecoder:
             return "VALUE_A"
         if state == "VALUE_A" and token.isdigit():
             return "AFTER_A"
+        if state == "ARGUMENTS" and token == "name":
+            return "VALUE"
+        if state == "VALUE" and token.isalpha():
+            return "DONE1"
         if state == "AFTER_A" and token == "b":
             return "VALUE_B"
         if state == "VALUE_B" and token.isdigit():
@@ -30,16 +34,10 @@ class ConstrainedDecoder:
     def get_allowed(self, state):
         if state == "START":
             return [self.vocab["{"]]
-
-        # if state == "ARGUMENTS":
-        #     return [self.vocab['"a"']]
-
-        if state == "VALUE":
-            return list(range(10))
-
-        if state == "DONE":
+        if state == "DONE1":
             return [self.vocab["}"]]
-
+        if state == "DONE2":
+            return [self.vocab["}"]]
         return list(range(len(self.vocab)))
 
     def decoder(self, text: str) -> str:
@@ -71,14 +69,13 @@ class ConstrainedDecoder:
             token = self.model.decode([next_token_id])
             input_ids.append(next_token_id)
             result += token
-            print(result)
 
             # 5. Advance FSM state
             state = self.update_state(state, token)
+            print(result)
             print(state)
             if state == "DONE":
                 break
-
         return result
 
 

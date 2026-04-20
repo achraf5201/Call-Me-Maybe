@@ -3,7 +3,7 @@ import sys
 from typing import List
 from src.models import FunctionDef, Prompt
 from src.parser import parse_args
-from src.decoder import decoder
+from src.decoder import ConstrainedDecoder
 
 
 def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
@@ -59,9 +59,10 @@ def main():
     for prompt in prompts:
         texts.append(build_prompt(prompt, definitions))
     i = 0
+    v = ConstrainedDecoder()
     for text in texts:
         print(prompts[i])
-        print(decoder(text))
+        print(v.decoder(text))
         i += 1
 
 

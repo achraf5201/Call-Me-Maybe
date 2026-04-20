@@ -19,13 +19,13 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
         text += f"- {func.name}({params}) -> {func.returns.type}\n"
         text += f"  Description: {func.description}\n\n"
 
-    text += "Output format:\n"
-    text += "{\n"
-    text += '  "function": "function_name",\n'
-    text += '  "arguments": {\n'
-    text += '    "param1": value\n'
-    text += "  }\n"
-    text += "}\n"
+    text += "Output format:"
+    text += "{"
+    text += 'function": "function_name",'
+    text += '"arguments": {'
+    text += '"a b": value'
+    text += "}"
+    text += "}"
     text += f"prompt: {user_prompt}\n"
 
     return text
@@ -58,10 +58,10 @@ def main():
     texts: List[str] = []
     for prompt in prompts:
         texts.append(build_prompt(prompt, definitions))
+        print(prompt)
     i = 0
     v = ConstrainedDecoder()
     for text in texts:
-        print(prompts[i])
         print(v.decoder(text))
         i += 1
 

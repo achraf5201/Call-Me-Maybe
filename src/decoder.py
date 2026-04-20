@@ -12,7 +12,5 @@ def decoder(text: str) -> str:
         next_token_id = int(np.argmax(logits))
         output_ids.append(next_token_id)
         result += model.decode([next_token_id])
-        if "  }\n}" in result:
-            break
         print(result)
     return result

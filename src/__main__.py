@@ -1,11 +1,9 @@
 import json
 import sys
 from typing import List
-from llm_sdk import Small_LLM_Model
-from src.models import FunctionDef, Prompt, FunctionCall
+from src.models import FunctionDef, Prompt
 from src.parser import parse_args
 from src.decoder import decoder
-import numpy as np
 
 
 def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
@@ -15,8 +13,7 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
 
     for func in functions:
         params = ", ".join(
-            f"{name}: {param.type}"
-            for name, param in func.parameters.items()
+            f"{name}: {param.type}" for name, param in func.parameters.items()
         )
 
         text += f"- {func.name}({params}) -> {func.returns.type}\n"
@@ -32,6 +29,7 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
     text += f"prompt: {user_prompt}\n"
 
     return text
+
 
 def main():
     args = parse_args()
@@ -52,9 +50,7 @@ def main():
             FunctionDef(**elem) for elem in functions_data
         ]
 
-        prompts: List[Prompt] = [
-            Prompt(**elem) for elem in prompts_data
-        ]
+        prompts: List[Prompt] = [Prompt(**elem) for elem in prompts_data]
 
     except Exception as e:
         print("Validation error:", e)

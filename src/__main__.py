@@ -55,18 +55,23 @@ def main():
     except Exception as e:
         print("Validation error:", e)
         sys.exit(1)
-    texts: List[str] = []
-    for prompt in prompts:
-        texts.append(build_prompt(prompt, definitions))
-        print(prompt)
-    i = 0
-    v = ConstrainedDecoder()
-    # print(v.state)
-    for text in texts:
-        print(v.decoder(text))
-        print("done")
-        i += 1
-
+    try:
+        texts: List[str] = []
+        for prompt in prompts:
+            texts.append(build_prompt(prompt, definitions))
+            print(prompt)
+        i = 0
+        v = ConstrainedDecoder()
+        # print(v.state)
+        for text in texts:
+            print(v.decoder(text))
+            print("done")
+            i += 1
+    except Exception as e:
+        print(e)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        print(e)

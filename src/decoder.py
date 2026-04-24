@@ -157,11 +157,23 @@ class ConstrainedDecoder:
             ],
             "fn_greet_COMMA_BEFORE_PARAMS": [
                 {
-                    "alowed_tokens": "\"parameters\"",
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_QOUTES_BEFORE_PARAMS"
+                }
+            ],
+            "fn_greet_QOUTES_BEFORE_PARAMS": [
+                {
+                    "alowed_tokens": "parameters",
                     "next_state": "fn_greet_PARAMS_KEY",
                 }
             ],
             "fn_greet_PARAMS_KEY": [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_QUOTES_AFTER_PARAMS"
+                }
+            ],
+            "fn_greet_QUOTES_AFTER_PARAMS": [
                 {
                     "alowed_tokens": ":",
                     "next_state": "fn_greet_PARAM_KEY_COLON"
@@ -173,23 +185,38 @@ class ConstrainedDecoder:
                     "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS"
                 }
             ],
-            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS": [
+            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS": 
+            [
                 {
-                    "alowed_tokens": "\"name\"",
-                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG",
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_QOUTES_BEFORE_NAME"
                 }
             ],
-            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG": [
+            "fn_greet_QOUTES_BEFORE_NAME": [
+                {
+                    "alowed_tokens": "name",
+                    "next_state": "fn_greet_NAME",
+                }
+            ],
+            "fn_greet_NAME": [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_QOUTES_AFTER_NAME"
+                }
+            ],
+            "fn_greet_QOUTES_AFTER_NAME": [
                 {
                     "alowed_tokens":  ":",
-                    "next_state": "fn_greet__EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
                 }
             ],
-            "fn_greet__EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
+            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
                 {
                     "alowed_tokens": "<ANY_STRING>",
-                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                    "next_state": "flag"
                 },
+            ],
+            "flag": [
                 {
                     "alowed_tokens": "}",
                     "next_state": "fn_greet_PARAM_END_BRACE"
@@ -231,9 +258,8 @@ class ConstrainedDecoder:
         input_ids = self.model.encode(text).tolist()
         if input_ids and isinstance(input_ids[0], list):
             input_ids = input_ids[0]
-        
-        result = ""
 
+        result = ""
         while state != "DONE":
             # 1. Get model predictions
             logits = self.model.get_logits_from_input_ids(input_ids)
@@ -246,24 +272,43 @@ class ConstrainedDecoder:
                 
                 token = self.model.decode([next_token_id])
                 input_ids.append(next_token_id)
-                print(f"this is the allowed ========= {token}")
                 result += token
 
                 print(result)
                 if "fn_add_numbers" in result:
                     state = "fn_add_numbers_FUN_NAME"
                 elif "fn_greet" in result:
-                    state = "ft_greet_FUN_NAME"
+                    state = "fn_greet_FUN_NAME"
                 else:
                     state = "EXPECT_COLON_AFTER_NAME"
-                print(state)
                 if state == "DONE":
                     break
             else:
                 # 2. Mask logits to allowed tokens only
+                # print(state)
+
+
+##### lmochkil hnaya
                 alowed = self.get_alowed(state)
+                if "<ANY_" in alowed:
+                    print(alowed)
+                    # allowed_as_id = self.vocab[alowed]
+                    # masked = np.full(len(logits), -np.inf)
+                    # masked[allowed_as_id] = logits[allowed_as_id]
+
+                    # 3. Pick next token (greedy)
+                    next_token_id = int(np.argmax(logits))
+                    
+                    # 4. Decode and accumulate
+                    token = self.model.decode([next_token_id])
+                    if token == "\",":
+                        alowed = "}"
+                    input_ids.append(next_token_id)
+                    result += token
+                    print(state)
+                    print(result)
+                    continue
                 allowed_as_id = self.vocab[alowed]
-                print(f"this is the allowed ========= {alowed}")
                 masked = np.full(len(logits), -np.inf)
                 masked[allowed_as_id] = logits[allowed_as_id]
 
@@ -278,7 +323,9 @@ class ConstrainedDecoder:
                 # 5. Advance FSM state
                 state = self.update_state(state, token)
                 print(result)
-                print(state)
                 if state == "DONE":
                     break
+
         return result
+
+

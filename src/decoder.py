@@ -2,6 +2,7 @@ import numpy as np
 import json
 from llm_sdk import Small_LLM_Model
 from src.stage import Stage
+from enum import Enum
 
 
 class ConstrainedDecoder:
@@ -9,40 +10,223 @@ class ConstrainedDecoder:
         self.model = Small_LLM_Model()
         with open(self.model.get_path_to_vocab_file()) as f:
             self.vocab = json.load(f)
+        self.state = {
+            "START": 
+            [
+                {
+                    "alowed_tokens": "{",
+                    "next_state": "EXPECT_START_BRACES"
+                }
+            ],
+            "EXPECT_START_BRACES":
+            [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "EXPECT_START_QOUTS"
+                }
+            ],
+            "EXPECT_START_QOUTS": 
+            [
+                {
+                    "alowed_tokens": "name",
+                    "next_state": "EXPECT_NAME"
+                }
+            ],
+            "EXPECT_NAME":
+            [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "EXPECT_END_QOUTS"
+                }
+            ],
+            "EXPECT_END_QOUTS": [
+                {
+                    "alowed_tokens": ":",
+                    "next_state": "EXPECT_COLON_AFTER_NAME"
+                }
+            ],
+            # "EXPECT_COLON_AFTER_NAME": [
+            #     {
+            #         "alowed_tokens": "\"fn_add_numbers\"",
+            #         "next_state": "fn_add_numbers_FUN_NAME"
+            #     },
+            #     {
+            #         "alowed_tokens": "\"fn_greet\"",
+            #         "next_state": "fn_greet_FUN_NAME"
+            #     },
+            #     {
+            #         "alowed_tokens": "\"fn_reverse_string\"",
+            #         "next_state": "fn_reverse_string_FUN_NAME"
+            #     },
+            #     {
+            #         "alowed_tokens": "\"fn_get_square_root\"",
+            #         "next_state": "fn_get_square_root_FUN_NAME"
+            #     },
+            #     {
+            #         "alowed_tokens": "\"fn_substitute_string_with_regex\"",
+            #         "next_state": "fn_substitute_string_with_regex_FUN_NAME"
+            #     }
+            # ],
+            # for fn_add_numbers
+            "fn_add_numbers_FUN_NAME": [
+                {
+                    "alowed_tokens": ",",
+                    "next_state": "fn_add_numbers_COMMA_BEFORE_PARAMS"
+                },
+            ],
+            "fn_add_numbers_COMMA_BEFORE_PARAMS": [
+                {
+                    "alowed_tokens": "\"parameters\"",
+                    "next_state": "fn_add_numbers_PARAMS_KEY"
+                }
+            ],
+            "fn_add_numbers_PARAMS_KEY": [
+                {
+                    "alowed_tokens": ":",
+                    "next_state": "fn_add_numbers_PARAM_KEY_COLON"
+                }
+            ],
+            "fn_add_numbers_PARAM_KEY_COLON": [
+                {
+                    "alowed_tokens": "{",
+                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS"
+                }
+            ],
+            "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS": [
+                {
+                    "alowed_tokens": "\"a\"",
+                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG"
+                }
+            ],
+            "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG": [
+                {
+                    "alowed_tokens": ":",
+                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                }
+            ],
+            "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
+                {
+                    "alowed_tokens": "<ANY_NUMBER>",
+                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                },
+                {
+                    "alowed_tokens": ",",
+                    "next_state": "fn_add_numbers_AFTER_a"
+                }
+            ],
+            "fn_add_numbers_AFTER_a": [
+                {
+                    "alowed_tokens": "\"b\"",
+                    "next_state": "fn_add_numbers_AFTER_a_KEY_ARG"
+                }
+            ],
+            "fn_add_numbers_AFTER_a_KEY_ARG": [
+                {
+                    "alowed_tokens": ":",
+                    "next_state": "fn_add_numbers_AFTER_a_VALUE"
+                }
+            ],
+            "fn_add_numbers_AFTER_a_VALUE": [
+                {
+                    "alowed_tokens": "<ANY_NUMBER>",
+                    "next_state": "fn_add_numbers_AFTER_a_VALUE"
+                },
+                {
+                    "alowed_tokens": "}",
+                    "next_state": "fn_add_numbers_PARAM_END_BRACE"
+                }
+            ],
+            "fn_add_numbers_PARAM_END_BRACE": [
+                {
+                    "alowed_tokens": "}",
+                    "next_state": "DONE"
+                }
+            ],
+            # for fn_greet
+            "fn_greet_FUN_NAME": [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_END_QOUTES_FOR_FUN_NUM"
+                }
+            ],
+            "fn_greet_END_QOUTES_FOR_FUN_NUM": [
+                {
+                    "alowed_tokens": ",",
+                    "next_state": "fn_greet_COMMA_BEFORE_PARAMS"
+                }
+            ],
+            "fn_greet_COMMA_BEFORE_PARAMS": [
+                {
+                    "alowed_tokens": "\"parameters\"",
+                    "next_state": "fn_greet_PARAMS_KEY",
+                }
+            ],
+            "fn_greet_PARAMS_KEY": [
+                {
+                    "alowed_tokens": ":",
+                    "next_state": "fn_greet_PARAM_KEY_COLON"
+                }
+            ],
+            "fn_greet_PARAM_KEY_COLON": [
+                {
+                    "alowed_tokens": "{",
+                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS"
+                }
+            ],
+            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS": [
+                {
+                    "alowed_tokens": "\"name\"",
+                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG",
+                }
+            ],
+            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG": [
+                {
+                    "alowed_tokens":  ":",
+                    "next_state": "fn_greet__EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                }
+            ],
+            "fn_greet__EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
+                {
+                    "alowed_tokens": "<ANY_STRING>",
+                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                },
+                {
+                    "alowed_tokens": "}",
+                    "next_state": "fn_greet_PARAM_END_BRACE"
+                }
+            ],
+            "fn_greet_PARAM_END_BRACE": [
+                {
+                    "alowed_tokens": "}",
+                    "next_state": "DONE"
+                }
+            ]
+        }
+
+    def get_alowed(self, state):
+        # arr = []
+        for key, val in self.state.items():
+            if key == state:
+                if len(val) == 1:
+                    for _, v in val[0].items():
+                        return v
+                else:
+                    for i in range(len(val)):
+                        for _, v in val[i].items():
+                            return v
+        return None
 
     def update_state(self, state, token):
-        if state == "START" and token == "{":
-            return "ARGUMENTS"
-        if state == "ARGUMENTS" and token == "a":
-            return "VALUE_A"
-        if state == "VALUE_A" and token.isdigit():
-            return "AFTER_A"
-        if state == "ARGUMENTS" and token == "name":
-            return "VALUE"
-        if state == "VALUE" and token.isalpha():
-            return "DONE1"
-        if state == "AFTER_A" and token == "b":
-            return "VALUE_B"
-        if state == "VALUE_B" and token.isdigit():
-            return "DONE1"
-        if state == "DONE1" and token == "}":
-            return "DONE2"
-        if state == "DONE2" and token == "}":
-            return "DONE"
-        return state
-
-    def get_allowed(self, state):
-        if state == "START":
-            return [self.vocab["{"]]
-        if state == "DONE1":
-            return [self.vocab["}"]]
-        if state == "DONE2":
-            return [self.vocab["}"]]
-        return list(range(len(self.vocab)))
+        for key, val in self.state.items():
+            if key == state:
+                return val[0]["next_state"]
+                # else:
+                #     for i in range(len(val)):
+                #         for _, v in val[i].items():
+                #             print("ba9i mahandlithach")
 
     def decoder(self, text: str) -> str:
-        state = "START"
-        
+        state = "START"  
         # Fix: strip batch dimension if encode returns [[...]]
         input_ids = self.model.encode(text).tolist()
         if input_ids and isinstance(input_ids[0], list):
@@ -54,53 +238,47 @@ class ConstrainedDecoder:
             # 1. Get model predictions
             logits = self.model.get_logits_from_input_ids(input_ids)
             logits = np.array(logits)
-            if logits.ndim == 2:
-                logits = logits[-1]
 
-            # 2. Mask logits to allowed tokens only
-            allowed = self.get_allowed(state)
-            masked = np.full(len(logits), -np.inf)
-            masked[allowed] = logits[allowed]
+            # if logits.ndim == 2:
+            #     logits = logits[-1]
+            if state == "EXPECT_COLON_AFTER_NAME":
+                next_token_id = int(np.argmax(logits))
+                
+                token = self.model.decode([next_token_id])
+                input_ids.append(next_token_id)
+                print(f"this is the allowed ========= {token}")
+                result += token
 
-            # 3. Pick next token (greedy)
-            next_token_id = int(np.argmax(masked))
+                print(result)
+                if "fn_add_numbers" in result:
+                    state = "fn_add_numbers_FUN_NAME"
+                elif "fn_greet" in result:
+                    state = "ft_greet_FUN_NAME"
+                else:
+                    state = "EXPECT_COLON_AFTER_NAME"
+                print(state)
+                if state == "DONE":
+                    break
+            else:
+                # 2. Mask logits to allowed tokens only
+                alowed = self.get_alowed(state)
+                allowed_as_id = self.vocab[alowed]
+                print(f"this is the allowed ========= {alowed}")
+                masked = np.full(len(logits), -np.inf)
+                masked[allowed_as_id] = logits[allowed_as_id]
 
-            # 4. Decode and accumulate
-            token = self.model.decode([next_token_id])
-            input_ids.append(next_token_id)
-            result += token
+                # 3. Pick next token (greedy)
+                next_token_id = int(np.argmax(masked))
+                
+                # 4. Decode and accumulate
+                token = self.model.decode([next_token_id])
+                input_ids.append(next_token_id)
+                result += token
 
-            # 5. Advance FSM state
-            state = self.update_state(state, token)
-            print(result)
-            print(state)
-            if state == "DONE":
-                break
+                # 5. Advance FSM state
+                state = self.update_state(state, token)
+                print(result)
+                print(state)
+                if state == "DONE":
+                    break
         return result
-
-
-# input_ids = tokenizer("", return_tensors="pt").input_ids
-
-# generated = ""
-
-# for step in range(5):
-#     outputs = model(input_ids)
-#     logits = outputs.logits[:, -1, :]
-
-#     # Get allowed tokens for this step
-#     allowed = allowed_tokens(step)
-#     allowed_ids = [tokenizer.encode(t, add_special_tokens=False)[0] for t in allowed]
-
-#     # Remove all tokens NOT allowed
-#     for token_id in range(logits.shape[-1]):
-#         if token_id not in allowed_ids:
-#             logits[0, token_id] = -float("inf")
-
-#     # Pick next token
-#     next_token_id = logits.argmax(dim=-1).unsqueeze(0)
-#     input_ids = next_token_id
-#     token = tokenizer.decode(next_token_id[0])
-
-#     generated += token
-
-# print("Generated:", generated)

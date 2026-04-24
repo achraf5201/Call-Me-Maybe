@@ -22,7 +22,7 @@ def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
     text += "Output format:"
     text += "{"
     text += 'function": "function_name",'
-    text += '"arguments": {'
+    text += '"parameters": {'
     text += '"a b": value'
     text += "}"
     text += "}"
@@ -61,6 +61,7 @@ def main():
         print(prompt)
     i = 0
     v = ConstrainedDecoder()
+    # print(v.state)
     for text in texts:
         print(v.decoder(text))
         print("done")

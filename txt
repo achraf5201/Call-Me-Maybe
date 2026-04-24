@@ -1,0 +1,43 @@
+zeroshot
+*shot
+hez id w nzido f output nichan
+fn_add_numbers_COMMA_BEFORE_PARAMS
+fn_add_numbers_PARAMS_KEY
+fn_add_numbers_PARAM_KEY_COLON
+fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS
+fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG
+fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE
+{
+    fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE
+    fn_add_numbers_AFTER_a
+}
+fn_add_numbers_AFTER_a_KEY_ARG
+fn_add_numbers_AFTER_a_VALUE
+{
+    fn_add_numbers_AFTER_a_VALUE
+    fn_add_numbers_PARAM_END_BRACE
+}
+DONE
+
+ "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS": [
+    {
+    "tokens": "\"a\"",
+    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG"
+    }
+],
+"fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG": [
+    {
+    "tokens": ":",
+    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+    }
+],
+"fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
+    {
+    "tokens": "<ANY_NUMBER>",
+    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+    },
+    {
+    "tokens": ",",
+    "next_state": "fn_add_numbers_AFTER_a"
+    }
+],

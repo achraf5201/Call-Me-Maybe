@@ -1,8 +1,6 @@
 import numpy as np
 import json
 from llm_sdk import Small_LLM_Model
-from src.stage import Stage
-from enum import Enum
 
 
 class ConstrainedDecoder:
@@ -11,7 +9,7 @@ class ConstrainedDecoder:
         with open(self.model.get_path_to_vocab_file()) as f:
             self.vocab = json.load(f)
         self.state = {
-            "START": 
+            "START":
             [
                 {
                     "alowed_tokens": "{",
@@ -25,7 +23,7 @@ class ConstrainedDecoder:
                     "next_state": "EXPECT_START_QOUTS"
                 }
             ],
-            "EXPECT_START_QOUTS": 
+            "EXPECT_START_QOUTS":
             [
                 {
                     "alowed_tokens": "name",
@@ -89,25 +87,29 @@ class ConstrainedDecoder:
             "fn_add_numbers_PARAM_KEY_COLON": [
                 {
                     "alowed_tokens": "{",
-                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS"
+                    "next_state":
+                    "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS"
                 }
             ],
             "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS": [
                 {
                     "alowed_tokens": "\"a\"",
-                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG"
+                    "next_state":
+                    "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG"
                 }
             ],
             "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_KEY_ARG": [
                 {
                     "alowed_tokens": ":",
-                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                    "next_state":
+                    "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
                 }
             ],
             "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
                 {
                     "alowed_tokens": "<ANY_NUMBER>",
-                    "next_state": "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                    "next_state":
+                    "fn_add_numbers_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
                 },
                 {
                     "alowed_tokens": ",",
@@ -185,7 +187,7 @@ class ConstrainedDecoder:
                     "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS"
                 }
             ],
-            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS": 
+            "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS":
             [
                 {
                     "alowed_tokens": "\"",
@@ -207,7 +209,8 @@ class ConstrainedDecoder:
             "fn_greet_QOUTES_AFTER_NAME": [
                 {
                     "alowed_tokens":  ":",
-                    "next_state": "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
+                    "next_state":
+                    "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE"
                 }
             ],
             "fn_greet_EXPECT_OPENING_BRACE_FOR_PARAMS_VALUE": [
@@ -217,6 +220,12 @@ class ConstrainedDecoder:
                 },
             ],
             "flag": [
+                {
+                    "alowed_tokens": "\"",
+                    "next_state": "fn_greet_QOUTES_AFTER_GENERATE"
+                }
+            ],
+            "fn_greet_QOUTES_AFTER_GENERATE": [
                 {
                     "alowed_tokens": "}",
                     "next_state": "fn_greet_PARAM_END_BRACE"
@@ -253,23 +262,18 @@ class ConstrainedDecoder:
                 #             print("ba9i mahandlithach")
 
     def decoder(self, text: str) -> str:
-        state = "START"  
+        state = "START"
         # Fix: strip batch dimension if encode returns [[...]]
-        input_ids = self.model.encode(text).tolist()
-        if input_ids and isinstance(input_ids[0], list):
-            input_ids = input_ids[0]
-
+        input_ids = self.model.encode(text)[0].tolist()
         result = ""
         while state != "DONE":
             # 1. Get model predictions
             logits = self.model.get_logits_from_input_ids(input_ids)
             logits = np.array(logits)
 
-            # if logits.ndim == 2:
-            #     logits = logits[-1]
             if state == "EXPECT_COLON_AFTER_NAME":
                 next_token_id = int(np.argmax(logits))
-                
+
                 token = self.model.decode([next_token_id])
                 input_ids.append(next_token_id)
                 result += token
@@ -285,24 +289,17 @@ class ConstrainedDecoder:
                     break
             else:
                 # 2. Mask logits to allowed tokens only
-                # print(state)
-
-
-##### lmochkil hnaya
+                # lmochkil hnaya
                 alowed = self.get_alowed(state)
                 if "<ANY_" in alowed:
                     print(alowed)
-                    # allowed_as_id = self.vocab[alowed]
-                    # masked = np.full(len(logits), -np.inf)
-                    # masked[allowed_as_id] = logits[allowed_as_id]
-
-                    # 3. Pick next token (greedy)
                     next_token_id = int(np.argmax(logits))
-                    
+
                     # 4. Decode and accumulate
                     token = self.model.decode([next_token_id])
                     if token == "\",":
-                        alowed = "}"
+                        state = "flag"
+                        continue
                     input_ids.append(next_token_id)
                     result += token
                     print(state)
@@ -314,7 +311,7 @@ class ConstrainedDecoder:
 
                 # 3. Pick next token (greedy)
                 next_token_id = int(np.argmax(masked))
-                
+
                 # 4. Decode and accumulate
                 token = self.model.decode([next_token_id])
                 input_ids.append(next_token_id)
@@ -327,5 +324,3 @@ class ConstrainedDecoder:
                     break
 
         return result
-
-

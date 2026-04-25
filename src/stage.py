@@ -21,5 +21,3 @@ class Stage(Enum):
     NEED_COMMA_OR_CLOSE = "NEED_COMMA_OR_CLOSE"
     NEED_CLOSE_OUTER = "NEED_CLOSE_OUTER"
     DONE = "DONE"
-
-

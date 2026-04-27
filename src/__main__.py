@@ -6,29 +6,27 @@ from src.parser import parse_args
 from src.decoder import ConstrainedDecoder
 
 
-def build_prompt(user_prompt: Prompt, functions: List[FunctionDef]) -> str:
-    text = "You are a function calling system.\n\n"
+def build_prompt(user_prompt: Prompt, functions: List[str]) -> str:
+    prompt = """<|im_start|>system
+        You are a function calling system.\nYou must return a valid json.
+        No explanation.
+        "Output format:"
+        {"name": "function_name","parameters": {"param": value}}"
+    <|im_end|>"""
+    prompt += f"""alowed function {functions}"""
+    prompt += f""" <|im_start|>{user_prompt}
+        <|im_end|>
+        <|im_start|>assistant
+        """
+    return prompt
 
-    text += "Available functions:\n\n"
 
-    for func in functions:
-        params = ", ".join(
-            f"{name}: {param.type}" for name, param in func.parameters.items()
-        )
-
-        text += f"- {func.name}({params}) -> {func.returns.type}\n"
-        text += f"  Description: {func.description}\n\n"
-
-    text += "Output format:"
-    text += "{"
-    text += 'function": "function_name",'
-    text += '"parameters": {'
-    text += '"a b": value'
-    text += "}"
-    text += "}"
-    text += f"prompt: {user_prompt}\n"
-
-    return text
+def get_func_name(functions_data) -> List[str]:
+    func = []
+    for d in functions_data:
+        func.append(d["name"])
+    print(func)
+    return func
 
 
 def main():
@@ -44,9 +42,8 @@ def main():
     except Exception as e:
         print("Error loading files:", e)
         sys.exit(1)
-
     try:
-        definitions: List[FunctionDef] = [
+        _: List[FunctionDef] = [
             FunctionDef(**elem) for elem in functions_data
         ]
 
@@ -55,20 +52,19 @@ def main():
     except Exception as e:
         print("Validation error:", e)
         sys.exit(1)
-    try:
-        texts: List[str] = []
-        for prompt in prompts:
-            texts.append(build_prompt(prompt, definitions))
-            print(prompt)
-        i = 0
-        v = ConstrainedDecoder()
-        # print(v.state)
-        for text in texts:
-            print(v.decoder(text))
-            print("done")
-            i += 1
-    except Exception as e:
-        print(e)
+    texts: List[str] = []
+    parsed_prompt = []
+    for prompt in prompts:
+        texts.append(build_prompt(prompt, functions_data))
+        parsed_prompt.append(prompt.model_dump())
+
+    v = ConstrainedDecoder()
+    # print(v.state)
+    i = 0
+    for text in texts:
+        print(v.decoder(text, parsed_prompt[i]["prompt"], functions_data))
+    #     print("done")
+        i += 1
 
 
 if __name__ == "__main__":

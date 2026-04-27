@@ -1,6 +1,8 @@
 zeroshot
 *shot
 hez id w nzido f output nichan
+sir 9alab bsmiyet fn_name wjib lparam
+imta ghadi ysali l function name generation 
 fn_add_numbers_COMMA_BEFORE_PARAMS
 fn_add_numbers_PARAMS_KEY
 fn_add_numbers_PARAM_KEY_COLON

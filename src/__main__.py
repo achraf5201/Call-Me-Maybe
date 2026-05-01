@@ -4,6 +4,7 @@ from typing import List
 from src.models import FunctionDef, Prompt
 from src.parser import parse_args
 from src.decoder import ConstrainedDecoder
+import os
 
 
 def build_prompt(user_prompt: Prompt, functions: List[str]) -> str:
@@ -11,9 +12,10 @@ def build_prompt(user_prompt: Prompt, functions: List[str]) -> str:
         You are a function calling system.\nYou must return a valid json.
         No explanation.
         "Output format:"
-        {"name": "function_name","parameters": {"param": value}}"
+        {"name": "function_name", "parameters": {"param": value}}"
     <|im_end|>"""
-    prompt += f"""alowed function {functions}"""
+    prompt += f"""alowed function {functions} format of all functions"""
+    prompt += """exemple: {"name": "fn_add_numbers","parameters": {"a": 264, "b": 345}}"""
     prompt += f""" <|im_start|>{user_prompt}
         <|im_end|>
         <|im_start|>assistant
@@ -27,6 +29,15 @@ def get_func_name(functions_data) -> List[str]:
         func.append(d["name"])
     print(func)
     return func
+
+
+def remove_folder(path):
+    for root, dirs, files in os.walk(path, topdown=False):
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    os.rmdir(path)
 
 
 def main():
@@ -56,15 +67,35 @@ def main():
     parsed_prompt = []
     for prompt in prompts:
         texts.append(build_prompt(prompt, functions_data))
-        parsed_prompt.append(prompt.model_dump())
+        # print(build_prompt(prompt, functions_data))
+        ready_prompt = prompt.model_dump()["prompt"]
+        # ready_prompt = ready_prompt.replace('"', "'")
+        print(ready_prompt)
+        parsed_prompt.append(ready_prompt)
 
+    # print(functions_data)
     v = ConstrainedDecoder()
     # print(v.state)
     i = 0
+    arr = []
+    # remove_folder("data/output")
+    # os.mkdir("data/output")
     for text in texts:
-        print(v.decoder(text, parsed_prompt[i]["prompt"], functions_data))
+        arr.append(v.decoder(text, parsed_prompt[i], functions_data))
     #     print("done")
         i += 1
+    # with open("../data/output/")
+    with open("data/output/function_calling_results.json", "w") as f:
+        # try:
+        data = []
+        for s in arr:
+            data.append(json.loads(s))
+            print(data)
+        # data = [json.loads(s) for s in arr]
+        # for d in data:
+        json.dump(data, f, indent=4)
+        # except Exception:
+        #     pass
 
 
 if __name__ == "__main__":

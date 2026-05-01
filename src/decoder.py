@@ -27,7 +27,7 @@ class ConstrainedDecoder:
             return {
                 "flag": "forced",
                 "state": "GET_QUOTE",
-                "allowed": '"'
+                "allowed": ""
             }
         elif state == "FUNCTION_NAME" and not self.check_function(functions_name, generated_text):
             return {
@@ -36,31 +36,36 @@ class ConstrainedDecoder:
                 "allowed": " ".join('"' + str(item) for item in functions_name)
             }
 
-        if state == "GET_QUOTE" and generated_text.endswith('",'):
-            return {
-                "flag": "forced",
-                "state": "GET_PARAM",
-                "allowed": '"parameters'
-            }
-        if state == "GET_PARAM" and '"parameters' not in generated_text:
-            return {
-                "flag": "forced",
-                "state": 'GET_":{',
-                "allowed": '":{'
-            }
-
-        if state == "ARG" and '":{' in generated_text:
+        if state == "GET_QUOTE" and '", "parameters": {' in generated_text:
             return {
                 "flag": "not_forced",
-                "state": "ARG",
+                "state": "GET_PARAM",
                 "allowed": ""
             }
-        elif state == "ARG" and '":{' not in generated_text:
+        if state == "GET_PARAM" and ("}}" in generated_text or "} }" in generated_text):
             return {
                 "flag": "forced",
-                "state": "GET_PARAM",
-                "allowed": '":{'
+                "state": 'DONE',
+                "allowed": ''
             }
+        # if state == "GET_}" and ("}}" in generated_text or "} }" in generated_text):
+        #     return {
+        #         "flag": "forced",
+        #         "state": "DONE",
+        #         "allowed": ""
+        #     }
+        # if state == "GET_PARAM":
+        #     return {
+        #         "flag": "not_forced",
+        #         "state": "ARG",
+        #         "allowed": ""
+        #     }
+        # elif state == "ARG" and '":{' not in generated_text:
+        #     return {
+        #         "flag": "forced",
+        #         "state": "GET_PARAM",
+        #         "allowed": '":{'
+        #     }
 
         return {
             "flag": "not_forced",
@@ -71,7 +76,7 @@ class ConstrainedDecoder:
     def get_function_name(self, functions_data):
         functions_name = []
         for func in functions_data:
-            functions_name.append(func["name"] + '",')
+            functions_name.append(func["name"])
         # print(functions_name)
         return functions_name
 
@@ -91,6 +96,18 @@ class ConstrainedDecoder:
                 i = 2
             state_and_token = self.update_state_and_get_allowed_token(state, generated_text, functions_name)
             state = state_and_token["state"]
+            if state == "DONE":
+                break
+            if state == "GET_QUOTE":
+                # print(state)
+                # print(state_and_token["allowed"])
+                generated_text += '", "parameters": {'
+                print('", "parameters": {', end="")
+                continue
+                # state_and_token = self.update_state_and_get_allowed_token(state, generated_text, functions_name)
+                # state = state_and_token["state"]
+                # print(state)
+                # print(state_and_token["allowed"])
             # print(state_and_token["state"])
             input_ids = self.model.encode(text + generated_text)[0].tolist()
             logits = self.model.get_logits_from_input_ids(input_ids)
@@ -129,6 +146,7 @@ class ConstrainedDecoder:
             print(token, end="", flush=True)
             input_ids.append(next_token_id)
             generated_text += token
+            # print(state)
             if "}}" in token:
                 break
 

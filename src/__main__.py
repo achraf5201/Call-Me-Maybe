@@ -15,7 +15,9 @@ def build_prompt(user_prompt: Prompt, functions: List[str]) -> str:
         {"name": "function_name", "parameters": {"param": value}}"
     <|im_end|>"""
     prompt += f"""alowed function {functions} format of all functions"""
-    prompt += """exemple: {"name": "fn_add_numbers","parameters": {"a": 264, "b": 345}}"""
+    prompt += """exemple:
+    {"name": "fn_add_numbers","parameters": {"a": 264, "b": 345}}
+    {"name": "fn_format_template","parameters": {"template": "Say \"hello\" to {name}"}}"""
     prompt += f""" <|im_start|>{user_prompt}
         <|im_end|>
         <|im_start|>assistant
@@ -68,7 +70,7 @@ def main():
     for prompt in prompts:
         texts.append(build_prompt(prompt, functions_data))
         # print(build_prompt(prompt, functions_data))
-        ready_prompt = prompt.model_dump()["prompt"]
+        ready_prompt = prompt.model_dump()["prompt"].replace("\\", "\\\\")
         # ready_prompt = ready_prompt.replace('"', "'")
         print(ready_prompt)
         parsed_prompt.append(ready_prompt)
@@ -86,16 +88,20 @@ def main():
         i += 1
     # with open("../data/output/")
     with open("data/output/function_calling_results.json", "w") as f:
-        # try:
-        data = []
-        for s in arr:
-            data.append(json.loads(s))
-            print(data)
-        # data = [json.loads(s) for s in arr]
-        # for d in data:
-        json.dump(data, f, indent=4)
-        # except Exception:
-        #     pass
+        try:
+            data = []
+            for s in arr:
+                print()
+                print()
+
+                print("result ====", s)
+
+                print()
+                print()
+                data.append(json.loads(s))
+            json.dump(data, f, indent=4)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

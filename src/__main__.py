@@ -25,14 +25,6 @@ def build_prompt(user_prompt: Prompt, functions: List[str]) -> str:
     return prompt
 
 
-def get_func_name(functions_data) -> List[str]:
-    func = []
-    for d in functions_data:
-        func.append(d["name"])
-    print(func)
-    return func
-
-
 def remove_folder(path):
     for root, dirs, files in os.walk(path, topdown=False):
         for name in files:
@@ -69,10 +61,7 @@ def main():
     parsed_prompt = []
     for prompt in prompts:
         texts.append(build_prompt(prompt, functions_data))
-        # print(build_prompt(prompt, functions_data))
         ready_prompt = prompt.model_dump()["prompt"].replace("\\", "\\\\")
-        # ready_prompt = ready_prompt.replace('"', "'")
-        print(ready_prompt)
         parsed_prompt.append(ready_prompt)
 
     # print(functions_data)
@@ -86,19 +75,18 @@ def main():
         arr.append(v.decoder(text, parsed_prompt[i], functions_data))
     #     print("done")
         i += 1
-    # with open("../data/output/")
     with open("data/output/function_calling_results.json", "w") as f:
         try:
             data = []
             for s in arr:
-                print()
-                print()
-
-                print("result ====", s)
-
-                print()
-                print()
                 data.append(json.loads(s))
+            for d in data:
+                for key in d["parameters"]:
+                    if key == 'a' or key == 'b':
+                        try:
+                            d["parameters"][key] = float(d["parameters"][key])
+                        except ValueError:
+                            pass
             json.dump(data, f, indent=4)
         except Exception:
             pass

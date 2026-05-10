@@ -54,29 +54,11 @@ class ConstrainedDecoder:
 
         if state == "GET_QUOTE" and '", "parameters": {' in generated_text:
             return {"flag": "not_forced", "state": "GET_PARAM", "allowed": ""}
+
         if state == "GET_PARAM" and (
             "}}" in generated_text or "} }" in generated_text
         ):
             return {"flag": "forced", "state": "DONE", "allowed": ""}
-
-        # if state == "GET_}" and ("}}" in generated_text or "} }" in generated_text):
-        #     return {
-        #         "flag": "forced",
-        #         "state": "DONE",
-        #         "allowed": ""
-        #     }
-        # if state == "GET_PARAM":
-        #     return {
-        #         "flag": "not_forced",
-        #         "state": "ARG",
-        #         "allowed": ""
-        #     }
-        # elif state == "ARG" and '":{' not in generated_text:
-        #     return {
-        #         "flag": "forced",
-        #         "state": "GET_PARAM",
-        #         "allowed": '":{'
-        #     }
 
         return {"flag": "not_forced", "state": state, "allowed": ""}
 
@@ -110,6 +92,15 @@ class ConstrainedDecoder:
                 generated_text += '", "parameters": {'
                 print('", "parameters": {', end="")
                 continue
+            # ------------------ param
+            for func in functions_data:
+                if func["name"] in generated_text and generated_text.endswith(
+                    '", "parameters": {'
+                ):
+                    key = list(func["parameters"].items())
+                    print(f' "{key[0][0]}": ', end="", flush=True)
+                    generated_text += f' "{key[0][0]}": '
+            # ------------------ end param
             input_ids = self.model.encode(text + generated_text)[0].tolist()
             logits = self.model.get_logits_from_input_ids(input_ids)
             allowed_ids = []
@@ -130,9 +121,10 @@ class ConstrainedDecoder:
             elif state_and_token["flag"] == "not_forced":
                 next_token_id = int(np.argmax(logits))
 
-            token = self.v[next_token_id]
+            token = self.v.get(next_token_id)
             print(token, end="", flush=True)
             generated_text += token
+
             if self.brace_weight <= 0:
                 break
             if "}}" in token:

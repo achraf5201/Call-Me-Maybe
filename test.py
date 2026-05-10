@@ -1,9 +1,17 @@
 import json
 
+func = {
+    "name": "fn_add_numbers",
+    "description": "Add two numbers together and return their sum.",
+    "parameters": {"a": {"type": "number"}},
+    "returns": {"type": "number"},
+}
 
-arr = {"Ga": 15}
-print(arr)
-arr = {value: key.replace("G", " ") for key, value in arr.items()}
+print(list(func["parameters"].items())[0][0])
+key = list(func["parameters"].items())
+print(key[0][0])
 
+# # print(arr)
 
-print(arr)
+# key, _ = func["parameters"].items()
+# print(f' "{key[0]}": ', end="", flush=True)

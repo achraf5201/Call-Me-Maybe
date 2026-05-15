@@ -12,12 +12,6 @@ class ConstrainedDecoder:
                 value: key.replace("Ġ", " ").replace("Ċ", "\n")
                 for key, value in self.vocab.items()
             }
-        self.closings = {
-            vid: ss.count("{") - ss.count("}")
-            for ss, vid in self.vocab.items()
-        }
-        self.brace_weight = 2
-        self.output = []
 
     def check_function(self, functions_name, generated_text: str):
         for func in functions_name:
@@ -71,6 +65,7 @@ class ConstrainedDecoder:
     def decoder(self, text: str, prompt, functions_data) -> str:
         i = 0
         state = "START"
+        count = 0
         generated_text = (
             "{" + '"prompt": "' + prompt.replace('"', '\\"') + '", '
         )
@@ -86,21 +81,32 @@ class ConstrainedDecoder:
                 state, generated_text, functions_name
             )
             state = state_and_token["state"]
+
             if state == "DONE":
                 break
+
             if state == "GET_QUOTE":
                 generated_text += '", "parameters": {'
                 print('", "parameters": {', end="")
                 continue
-            # ------------------ param
+
+            if state == "GET_PARAM":
+                for func in functions_data:
+                    if func["name"] in generated_text:
+                        key = list(func["parameters"].items())
+                        len_key = len(key)
+                        for _ in range(len_key):
+                            if generated_text.endswith('", "parameters": {'):
+                                print(f' "{key[0][0]}":', end="", flush=True)
+                                generated_text += f' "{key[0][0]}": '
+                            else:
+                                break
+
+            length = 0
             for func in functions_data:
-                if func["name"] in generated_text and generated_text.endswith(
-                    '", "parameters": {'
-                ):
-                    key = list(func["parameters"].items())
-                    print(f' "{key[0][0]}": ', end="", flush=True)
-                    generated_text += f' "{key[0][0]}": '
-            # ------------------ end param
+                if func["name"] in generated_text:
+                    length = len(func["parameters"])
+
             input_ids = self.model.encode(text + generated_text)[0].tolist()
             logits = self.model.get_logits_from_input_ids(input_ids)
             allowed_ids = []
@@ -120,13 +126,15 @@ class ConstrainedDecoder:
                 next_token_id = int(np.argmax(masked))
             elif state_and_token["flag"] == "not_forced":
                 next_token_id = int(np.argmax(logits))
-
-            token = self.v.get(next_token_id)
+            token = self.model.decode(next_token_id)
+            if token == "," and count != length and prompt.count(",") == 0:
+                count += 1
+            if token == "," and count == length:
+                token = '}'
             print(token, end="", flush=True)
             generated_text += token
-
-            if self.brace_weight <= 0:
+            if generated_text.count("{") - generated_text.count("}") <= 0:
                 break
-            if "}}" in token:
-                break
+            # if "} }" in generated_text:
+            #     break
         return generated_text

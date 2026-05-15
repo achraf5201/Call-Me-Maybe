@@ -88,34 +88,35 @@ class ConstrainedDecoder:
                 generated_text += '", "parameters": {'
                 print('", "parameters": {', end="")
                 continue
-            # if state == "FINAL_STATE":
-            #     digit = ""
-            #     for c in prompt:
-            #         if c.isdigit():
-            #             digit += c
-            #     for func in functions_data:
-            #         if func["name"] in generated_text:
-            #             for _, d in func["parameters"].items():
-            #                 if d["type"] == "number":
-            #                     in_ids = self.model.encode(text + generated_text)[0].tolist()
-            #                     log = self.model.get_logits_from_input_ids(in_ids)
-            #                     allowed_ids = []
-            #                     final_ids = self.model.encode(digit + "}")[0].tolist()
+            if state == "FINAL_STATE":
+                digit = ""
+                for c in prompt:
+                    if c.isdigit():
+                        digit += c
+                for func in functions_data:
+                    if func["name"] in generated_text:
+                        for _, d in func["parameters"].items():
+                            if d["type"] == "number":
+                                print("===========")
+                                in_ids = self.model.encode(text + generated_text)[0].tolist()
+                                log = self.model.get_logits_from_input_ids(in_ids)
+                                allowed_ids = []
+                                final_ids = self.model.encode(digit + "}")[0].tolist()
 
-            #                     allowed_ids.extend(final_ids)
-            #                     log = np.array(log)
-            #                     masked = np.full(len(log), float("-inf"))
-            #                     for idx in final_ids:
-            #                         masked[idx] = log[idx]
-            #                     next_token_id = int(np.argmax(masked))
-            #                     token = self.v.get(next_token_id)
-            #                     print(token, end="", flush=True)
-            #                     generated_text += token
-            #                     if generated_text.count("{") - generated_text.count("}") <= 1:
-            #                         break
-            #                     continue
-            #                 else:
-            #                     pass
+                                allowed_ids.extend(final_ids)
+                                log = np.array(log)
+                                masked = np.full(len(log), float("-inf"))
+                                for idx in final_ids:
+                                    masked[idx] = log[idx]
+                                next_token_id = int(np.argmax(masked))
+                                token = self.v.get(next_token_id)
+                                print(token, end="", flush=True)
+                                generated_text += token
+                                if generated_text.count("{") - generated_text.count("}") <= 1:
+                                    break
+                                continue
+                            else:
+                                pass
 
             # ------------------ param
             if state == "GET_PARAM":
@@ -129,15 +130,15 @@ class ConstrainedDecoder:
                                 print(f' "{key[0][0]}":', end="", flush=True)
                                 generated_text += f' "{key[0][0]}": '
                                 flag = 1
-                                # if len_key == 1:
-                                    # state = "FINAL_STATE"
+                                if len_key == 1:
+                                    state = "FINAL_STATE"
                             elif generated_text.endswith(",") and flag == 1:
 
                                 print(f' "{key[1][0]}":', end="", flush=True)
                                 generated_text += f' "{key[1][0]}": '
                                 flag = 2
-                                # if len_key == 2:
-                                    # state = "FINAL_STATE"
+                                if len_key == 2:
+                                    state = "FINAL_STATE"
                             else:
                                 break
             # ------------------ end param

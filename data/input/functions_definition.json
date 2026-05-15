@@ -67,5 +67,20 @@
     "returns": {
       "type": "string"
     }
+  },
+  {
+    "name": "fn_is_equal",
+    "description": "compare two number a nad b and return boll either True or False",
+    "parameters":{
+      "a": {
+        "type": "number"
+      },
+      "b": {
+        "type": "number"
+      }
+    },
+    "returns": {
+      "type": "bool"
+    }
   }
 ]

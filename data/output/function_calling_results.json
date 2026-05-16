@@ -1,10 +1,10 @@
 [
     {
-        "prompt": "What is the sum of 2 and 3?",
-        "name": "fn_add_numbers",
+        "prompt": "3 is greater than 2 ?",
+        "name": "fn_is_equal",
         "parameters": {
-            "a": 2.0,
-            "b": 3.0
+            "a": 3.0,
+            "b": 2.0
         }
     },
     {
@@ -62,7 +62,7 @@
         "name": "fn_substitute_string_with_regex",
         "parameters": {
             "source_string": "Hello 34 I'm 233 years old",
-            "regex": "34",
+            "regex": "34|233",
             "replacement": "NUMBERS"
         }
     },
@@ -71,7 +71,7 @@
         "name": "fn_substitute_string_with_regex",
         "parameters": {
             "source_string": "Programming is fun",
-            "regex": "([aeiou])",
+            "regex": "([aeiouAEIOU])",
             "replacement": "*"
         }
     },

@@ -133,7 +133,7 @@ class ConstrainedDecoder:
                 token = '}'
             print(token, end="", flush=True)
             generated_text += token
-            if generated_text.count("{") - generated_text.count("}") <= 0:
+            if generated_text.count("{") - generated_text.count("}")  - prompt.count("{") - prompt.count("{") == 0:
                 break
             # if "} }" in generated_text:
             #     break
